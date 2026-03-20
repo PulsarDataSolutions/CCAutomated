@@ -1,0 +1,32 @@
+# ── CCAutomated runtime artifacts (not shared) ──────────────────────────────
+
+# Personal settings overrides (accumulated permission grants, local MCP servers)
+.claude/settings.local.json
+*.local.json
+
+# Agent memory (per-user, runtime-generated)
+.claude/agent-memory/
+
+# Mutagen runtime data (session metrics, not source)
+.claude/mutagen-memory/usage-metrics.jsonl
+
+# ── MCP config ──────────────────────────────────────────────────────────────
+# Contains MCP server definitions — may vary per machine.
+# Commit if the team shares the same MCP setup; gitignore if not.
+.mcp.json
+
+# ── Serena ──────────────────────────────────────────────────────────────────
+.serena/cache/
+.serena/project.local.yml
+
+# ── OS / Editor ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# ── Node (if any tooling scripts added) ─────────────────────────────────────
+node_modules/
