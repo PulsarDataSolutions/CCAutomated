@@ -13,5 +13,6 @@ paths:
 - All MCP servers must specify minimum required permissions — avoid overly broad access
 - When generating `.claude/settings.json`, use explicit `allow` lists rather than blanket permissions
 - Plugin security evaluation must check: source reputation, GitHub activity, permission requirements, data access scope
-- Risk classification: LOW (auto-integrate), MEDIUM (flag for user review), HIGH (reject)
-- Log all security decisions in `mutagen-history.md` with reasoning
+- Risk classification: LOW (recommended), MEDIUM (review suggested), HIGH (not recommended) — all require user approval
+- Mutagen is advisory-only — it NEVER applies changes without explicit user approval
+- Log all security decisions in `plugin-registry.md` and `improvement-log.md` with reasoning

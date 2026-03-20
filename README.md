@@ -68,7 +68,7 @@ flowchart TD
 | **Web Researcher** | Searches web for best practices, MCP servers, plugins for the detected stack. | Yes |
 | **Implementer** | Writes config files based on the Architect's plan. Supports per-file actions (CREATE/UPDATE/MERGE/REPLACE/KEEP). | No |
 | **Reviewer** | Reviews generated configs for quality, correctness, security. Returns APPROVE or CHANGES_REQUESTED. | Yes |
-| **Mutagen** | Evolution engine — discovers new tools, prunes unused ones, creates skills from patterns. | No |
+| **Mutagen** | Evolution engine — discovers new tools, proposes optimizations, creates skills from patterns. Advisory-only: never applies changes without user approval. | No |
 | **Mutagen Discovery** | Web scout spawned by Mutagen to find new plugins/MCP servers/skills. | Yes |
 
 ```mermaid
@@ -171,58 +171,94 @@ Fires after each Claude response via the Stop hook. Parses the full session tran
 
 ### SessionStart hook
 
-Triggers the Mutagen agent to run its evolution cycle at the beginning of every interactive session.
+Triggers the Mutagen agent to run its advisory evolution cycle at the beginning of every interactive session. Mutagen analyzes usage, discovers new tools, runs efficiency analysis on high-frequency patterns, and greets the user with a summary of recommendations. No changes are applied until the user approves.
 
 ## Mutagen: The Evolution Engine
 
-Each target repo gets a full Mutagen agent. It runs on every session start and keeps the Claude Code setup at peak efficiency — discovering new tools, pruning unused ones, and creating skills from recurring patterns.
+Each target repo gets a full Mutagen agent. It runs on every session start and keeps the Claude Code setup at peak efficiency — discovering new tools, proposing optimizations, and creating skills from recurring patterns. Mutagen is **advisory-only**: it never applies changes without explicit user approval.
 
 ```mermaid
 flowchart TD
-    START["SessionStart hook fires"] --> READ["1. Read Current State\nmutagen-history.md + current config"]
+    START["SessionStart hook fires"] --> READ["1. Read Current State\nmutagen-memory/ + history + pending"]
 
-    READ --> ANALYZE["2. Analyze Usage"]
-    ANALYZE --> A1["mutagen-usage-log.jsonl\n(tool usage per agent,\nskill popularity,\nMCP/plugin value,\nbash patterns)"]
-    ANALYZE --> A2["mutagen-memory/usage-metrics.jsonl\n(cross-session trends,\nuser command patterns,\nagent behavior)"]
+    READ --> ANALYZE["2. Analyze Usage\n(identify high-frequency patterns)"]
+    ANALYZE --> A1["mutagen-usage-log.jsonl\n(tool usage, bash patterns,\nskill popularity)"]
+    ANALYZE --> A2["usage-metrics.jsonl\n(cross-session trends,\nuser command patterns)"]
 
     A1 --> DISCOVER
     A2 --> DISCOVER
 
-    DISCOVER["3. Discovery\nSpawn Mutagen Discovery\n(web search for new tools)"] --> EVALUATE
+    DISCOVER["3. Discovery Mode\nSpawn Mutagen Discovery\n(new tools for stack)"] --> EVALUATE
 
-    EVALUATE["4. Evaluate Discoveries"]
-    EVALUATE --> LOW["LOW risk\n(known source, minimal perms)\nAuto-integrate"]
-    EVALUATE --> MED["MEDIUM risk\n(community tool, needs access)\nFlag for user review"]
-    EVALUATE --> HIGH["HIGH risk\n(unknown source, broad perms)\nReject"]
+    A1 --> EFFICIENCY
+    A2 --> EFFICIENCY
 
-    LOW --> APPLY["5. Apply Changes\n(.mcp.json, agents, settings,\nskills, CLAUDE.md)"]
-    MED --> FLAG["Flag for user"]
+    EFFICIENCY["4. Efficiency Mode\nFor tools with 10+ uses:\nspawn Discovery for\nfaster alternatives"] --> EVALUATE
 
-    APPLY --> LOG["6. Log to mutagen-history.md\nDiscoveries, integrations,\npruning, skills created"]
+    EVALUATE["5. Evaluate All Findings"]
+    EVALUATE --> LOW["LOW risk\nRecommended"]
+    EVALUATE --> MED["MEDIUM risk\nReview suggested"]
+    EVALUATE --> HIGH["HIGH risk\nNot recommended"]
 
+    LOW --> PENDING["6. Write to\npending-recommendations.md"]
+    MED --> PENDING
+    HIGH --> PENDING
+
+    PENDING --> GREET["7. Greet User\nPresent summary"]
+    GREET --> USER{"User\ndecides"}
+
+    USER -->|"approve"| APPLY["8. Apply Changes"]
+    USER -->|"reject"| LOG
+    USER -->|"skip"| DEFER["Carry to\nnext session"]
+
+    APPLY --> LOG["9. Log to\nimprovement-log.md +\nmutagen-history.md"]
+
+    style DISCOVER fill:#e67e22,color:#fff
+    style EFFICIENCY fill:#e67e22,color:#fff
+    style USER fill:#4a90d9,color:#fff
     style LOW fill:#27ae60,color:#fff
     style MED fill:#f39c12,color:#fff
     style HIGH fill:#e74c3c,color:#fff
-    style DISCOVER fill:#e67e22,color:#fff
 ```
+
+### Thresholds
+
+| Parameter | Default | What it triggers |
+|-----------|---------|-----------------|
+| **Skill creation** | 3+ occurrences of same bash command across sessions | Propose wrapping in a skill |
+| **Pruning** | 0 uses across 5+ sessions | Propose removing the unused tool/skill/MCP server |
+| **Efficiency analysis** | 10+ uses of same tool/command across sessions | Search for faster alternatives, caching, MCP equivalents |
+| **MCP efficiency** | 20+ uses of same MCP tool | Search for local/cached alternative or batch mode |
+| **Builtin suggestion** | 15+ uses of a bash command that has a builtin equivalent | Suggest using the builtin (Grep, Read, Glob) |
 
 ### What Mutagen tracks
 
 | Data Source | What's in it | How Mutagen uses it |
 |-------------|-------------|---------------------|
-| `mutagen-usage-log.jsonl` | Every tool call, classified by type + agent | Raw data for usage analysis — combined with session metrics to identify unused tools (prune after 5+ sessions) and recurring bash patterns (create skills) |
+| `mutagen-usage-log.jsonl` | Every tool call, classified by type + agent | Raw data for usage analysis — identifies pruning candidates, recurring patterns, and high-frequency tools for efficiency analysis |
 | `mutagen-memory/usage-metrics.jsonl` | Per-session snapshots with combined totals | Cross-session trends, user command patterns, agent behavior analysis |
 | `mutagen-memory/plugin-registry.md` | Every tool evaluated — name, source, risk, status | Skip re-evaluating known tools, track what was approved/rejected |
-| `mutagen-memory/improvement-log.md` | Every decision Mutagen made — what, why, impact | Audit trail of all changes to the setup |
+| `mutagen-memory/improvement-log.md` | Every decision — what, why, status (approved/rejected/deferred) | Audit trail, prevents re-recommending rejected items |
+| `mutagen-memory/pending-recommendations.md` | Unapproved recommendations | Carried forward across sessions until user acts |
 | `mutagen-history.md` | Evolution cycle summaries | High-level log of what happened each cycle |
+
+### Recommendation types
+
+| Type | Example | Source |
+|------|---------|--------|
+| `[NEW]` | New MCP server for your stack | Discovery mode |
+| `[EFFICIENCY]` | `npm test` → `vitest --changed` for incremental runs | Efficiency mode |
+| `[PRUNE]` | `/deploy` skill unused for 7 sessions | Usage analysis |
+| `[SKILL]` | Wrap `docker compose up -d` → `/up` | Recurring pattern detection |
+| `[BUILTIN]` | `grep -r` via Bash → use Grep builtin tool | Local analysis (no web search) |
 
 ### Skill creation from patterns
 
-Mutagen detects recurring workflows and creates skills automatically:
+Mutagen detects recurring workflows and proposes skills:
 
-- **Recurring bash commands** (3+ occurrences across sessions) → wrap in a skill
-- **User slash command patterns** → the workflow is valuable, formalize it
-- **Stack features without skills** (e.g., test framework present but no `/test`) → create missing skill
+- **Recurring bash commands** (3+ occurrences across sessions) → propose wrapping in a skill
+- **User slash command patterns** → the workflow is valuable, propose formalization
+- **Stack features without skills** (e.g., test framework present but no `/test`) → propose missing skill
 - **Community patterns** from Mutagen Discovery → propose skill
 
 ## What Gets Generated
@@ -242,8 +278,9 @@ your-repo/
 │   │   ├── post-tool-use.sh        # Real-time usage logger
 │   │   └── stop-session-metrics.sh # Session metrics aggregator
 │   ├── mutagen-memory/
-│   │   ├── plugin-registry.md      # Evaluated tools for this repo
-│   │   └── improvement-log.md      # Mutagen's decisions for this repo
+│   │   ├── plugin-registry.md          # Evaluated tools for this repo
+│   │   ├── improvement-log.md          # Mutagen's decisions for this repo
+│   │   └── pending-recommendations.md  # Unapproved recommendations
 │   ├── skills/                     # Stack-specific commands
 │   ├── rules/                      # Coding conventions
 │   └── settings.json               # Permissions, hooks, model config

@@ -27,7 +27,7 @@
           {
             "type": "agent",
             "agent": "mutagen",
-            "prompt": "Run your evolution cycle: (1) Read your memory (.claude/mutagen-memory/) and history (.claude/mutagen-history.md). (2) Analyze usage logs (.claude/mutagen-usage-log.jsonl) and session metrics (.claude/mutagen-memory/usage-metrics.jsonl). (3) Spawn Mutagen Discovery — skip tools already in plugin-registry.md. (4) Evaluate discoveries, update plugin-registry.md. (5) Prune tools unused for 5+ sessions. (6) Create new skills from recurring patterns. (7) Log all changes to mutagen-history.md and improvement-log.md."
+            "prompt": "Run your evolution cycle. You are ADVISORY ONLY — never apply changes without user approval. (1) Read your memory (.claude/mutagen-memory/), pending recommendations, and history. (2) Analyze usage logs for patterns, pruning candidates, and high-frequency tools (10+ uses = efficiency analysis). (3) Spawn Mutagen Discovery in discovery mode — skip tools already in plugin-registry.md. (4) For high-frequency tools, spawn Discovery again in efficiency mode. (5) Evaluate all findings, update plugin-registry.md. (6) Detect skill opportunities from recurring patterns. (7) Write ALL recommendations to pending-recommendations.md. (8) Greet the user with a summary. If zero recommendations, output nothing. The user will approve, reject, or defer each item."
           }
         ]
       }

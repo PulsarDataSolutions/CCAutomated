@@ -59,7 +59,7 @@ If no existing setup → skip, proceed with full generation.
 Combine all research into a generation plan:
 - Include a **per-file disposition table** with actions per file (CREATE/KEEP/UPDATE/MERGE/REPLACE)
 - Each file must have a rationale
-- Include Mutagen's recommendations (only low-risk tools auto-integrated)
+- Include Mutagen's recommendations (all require user approval — Mutagen is advisory-only)
 - Present the plan to the user for approval
 
 ### 5. Implementation (Implementer-Reviewer Loop)

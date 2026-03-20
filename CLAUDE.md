@@ -17,7 +17,7 @@ CCAutomated is a meta-tool for generating optimal Claude Code setups on any repo
 | Web Researcher | Searches web for best practices, MCP servers, plugins. |
 | Implementer | Writes config files to target repo based on Architect's plan. |
 | Reviewer | Reviews generated configs for quality, correctness, security. |
-| Mutagen | Evolution engine. Tracks usage, prunes unused tools, discovers new ones, creates skills. |
+| Mutagen | Evolution engine. Advisory-only — discovers tools, proposes optimizations, creates skills. Never applies changes without user approval. |
 | Mutagen Discovery | Web scout spawned by Mutagen to find new plugins/MCP servers/skills. |
 
 ## Core Rules
@@ -25,7 +25,7 @@ CCAutomated is a meta-tool for generating optimal Claude Code setups on any repo
 - **All agents use Opus 4.6** (or most recent version). No lesser models.
 - The **Mutagen MUST be consulted** during every planning phase.
 - Existing target configs require **strategy selection** (Update/Merge/Replace) — never overwrite without user consent. Default: Update (least invasive).
-- **Security review is mandatory** for any recommended plugin/MCP server.
+- **Security review is mandatory** for any recommended plugin/MCP server. Mutagen is advisory-only — all changes require user approval.
 - Generated CLAUDE.md files must be **concise and succinct**.
 - Templates in `templates/` are reference starting points — always customize per target.
 - Generated `.claude/` setup is **fully gitignored** on target repos.
@@ -50,12 +50,16 @@ Templates in `templates/` are used by the Implementer as starting points:
 
 ## Mutagen Evolution System
 
-Each target repo gets a fully autonomous Mutagen agent with its own memory at `.claude/mutagen-memory/`. It runs on SessionStart and:
-- Reads its own plugin-registry and improvement-log (no cross-repo dependency)
+Each target repo gets a fully autonomous Mutagen agent with its own memory at `.claude/mutagen-memory/`. Mutagen is **advisory-only** — it never applies changes without explicit user approval.
+
+It runs on SessionStart and:
+- Reads its own plugin-registry, improvement-log, and pending-recommendations (no cross-repo dependency)
 - Spawns Mutagen Discovery to search the web for new tools (skips already-evaluated ones)
-- Analyzes usage logs to prune unused skills/plugins/commands
-- Creates new skills when it detects recurring workflow patterns
-- Evaluates security of all discovered tools (low=auto-install, medium=flag, high=reject)
+- Analyzes usage logs for pruning candidates, skill opportunities, and high-frequency patterns
+- For tools used 10+ times across sessions, runs efficiency analysis (faster alternatives, MCP equivalents, caching)
+- Detects bash-to-builtin opportunities locally (e.g., `grep -r` → Grep tool)
+- Writes ALL findings to `pending-recommendations.md` and greets the user with a summary
+- User approves, rejects, or defers each recommendation — only then are changes applied
 - Logs all evaluations to `plugin-registry.md` and all decisions to `improvement-log.md`
 
 CCAutomated's own Mutagen memory is at `.claude/mutagen-memory/` (same structure, plus `version-history.md` and `user-feedback.md` for tracking generations).

@@ -50,6 +50,8 @@ You receive:
 - [ ] Stop hook configured for session metrics collection (`.claude/hooks/stop-session-metrics.sh`)
 - [ ] Mutagen memory initialized: `.claude/mutagen-memory/plugin-registry.md` exists
 - [ ] Mutagen memory initialized: `.claude/mutagen-memory/improvement-log.md` exists
+- [ ] Mutagen memory initialized: `.claude/mutagen-memory/pending-recommendations.md` exists
+- [ ] Mutagen agent is advisory-only — no auto-apply language, user approval required
 - [ ] Log files will be created on first use (usage-log, usage-metrics, mutagen-history)
 
 ### CLAUDE.md Quality

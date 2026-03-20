@@ -74,7 +74,7 @@ File exists but will be overwritten entirely. Read the existing file first (for 
 6. `.claude/agents/`
 7. `.claude/skills/`
 8. `.claude/rules/`
-9. `.claude/mutagen-memory/` — initialize with empty `plugin-registry.md` and `improvement-log.md`
+9. `.claude/mutagen-memory/` — initialize with empty `plugin-registry.md`, `improvement-log.md`, and `pending-recommendations.md`
 10. `.mcp.json`
 
 **Important:** Hook scripts (steps 3-4) MUST be created before `settings.json` (step 5), because `settings.json` references them. After writing each hook script, run `chmod +x` on it.
@@ -95,6 +95,13 @@ Create `.claude/mutagen-memory/improvement-log.md`:
 # Improvement Log
 
 Decisions made by Mutagen about what to add, remove, or change in this project's setup.
+```
+
+Create `.claude/mutagen-memory/pending-recommendations.md`:
+```markdown
+# Pending Recommendations
+
+No recommendations yet. Mutagen will populate this on the first evolution cycle.
 ```
 
 ## Template Customization

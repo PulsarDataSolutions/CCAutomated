@@ -36,12 +36,15 @@ This repo uses a Claude Code agent system managed by CCAutomated:
 
 ## Mutagen Evolution
 
-The Mutagen agent runs on every session start and:
+The Mutagen agent runs on every session start. It is **advisory-only** — it never applies changes without your approval.
+
+On session start, Mutagen:
 - Reads its memory (`.claude/mutagen-memory/`) for past evaluations and decisions
-- Checks for setup drift (new deps, changed structure)
+- Analyzes usage patterns for pruning candidates, skill opportunities, and efficiency improvements
 - Searches for new relevant plugins and MCP servers (skips already-evaluated ones)
-- Prunes tools unused for 5+ sessions
-- Creates new skills from detected recurring patterns
-- Logs evaluations to `.claude/mutagen-memory/plugin-registry.md`
-- Logs decisions to `.claude/mutagen-memory/improvement-log.md`
-- Logs cycle summaries to `.claude/mutagen-history.md`
+- For high-frequency tools (10+ uses), searches for faster alternatives
+- Detects bash-to-builtin opportunities (e.g., `grep -r` → Grep tool)
+- Writes all findings to `.claude/mutagen-memory/pending-recommendations.md`
+- Greets you with a summary of recommendations (silent if nothing to report)
+
+Respond with "approve all", "approve 1,3", "reject 2", "details 1", or "skip" to defer to next session.

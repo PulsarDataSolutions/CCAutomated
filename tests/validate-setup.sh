@@ -182,6 +182,17 @@ fi
   && pass "M18: mutagen-memory/improvement-log.md exists" \
   || fail "M18: .claude/mutagen-memory/improvement-log.md missing"
 
+[ -f ".claude/mutagen-memory/pending-recommendations.md" ] \
+  && pass "M19: mutagen-memory/pending-recommendations.md exists" \
+  || fail "M19: .claude/mutagen-memory/pending-recommendations.md missing"
+
+# M20: Mutagen agent is advisory-only (no auto-integrate/auto-install language)
+if [ -f ".claude/agents/mutagen.md" ]; then
+  ! grep -qi 'auto.integrat\|auto.install\|auto.apply' ".claude/agents/mutagen.md" \
+    && pass "M20: mutagen.md is advisory-only (no auto-apply language)" \
+    || fail "M20: mutagen.md contains auto-apply language — should be advisory-only"
+fi
+
 # ══════════════════════════════════════════════════════════════════════════════
 section "A: Agent Quality"
 # ══════════════════════════════════════════════════════════════════════════════
