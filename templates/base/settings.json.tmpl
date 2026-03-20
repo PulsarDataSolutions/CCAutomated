@@ -1,0 +1,57 @@
+{
+  "model": "opus",
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Read",
+      "Glob",
+      "Grep",
+      "Write",
+      "Edit",
+      "Agent",
+      "Skill",
+      "WebFetch",
+      "WebSearch"
+      {{EXTRA_PERMISSIONS}}
+    ],
+    "deny": [
+      "Bash(git push --force *)",
+      "Bash(rm -rf /)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "mutagen",
+            "prompt": "Run your evolution cycle: (1) Read your memory (.claude/mutagen-memory/) and history (.claude/mutagen-history.md). (2) Analyze usage logs (.claude/mutagen-usage-log.jsonl) and session metrics (.claude/mutagen-memory/usage-metrics.jsonl). (3) Spawn Mutagen Discovery — skip tools already in plugin-registry.md. (4) Evaluate discoveries, update plugin-registry.md. (5) Prune tools unused for 5+ sessions. (6) Create new skills from recurring patterns. (7) Log all changes to mutagen-history.md and improvement-log.md."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-tool-use.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/stop-session-metrics.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
