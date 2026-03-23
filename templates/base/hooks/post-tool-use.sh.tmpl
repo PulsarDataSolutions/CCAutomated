@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# post-tool-use.sh — Lightweight per-event usage logger for Mutagen
+# Fires on every tool call. Classifies the event and appends one line to the usage log.
+# MUST be fast (< 50ms) — no transcript parsing, no loops, no network.
+
+set -euo pipefail
+
+INPUT=$(cat)
+
+TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
+[ -z "$TOOL_NAME" ] && exit 0
+
+AGENT=$(echo "$INPUT" | jq -r '.agent_type // "main"')
+TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+LOG_FILE=".claude/mutagen-usage-log.jsonl"
+
+mkdir -p .claude
+
+case "$TOOL_NAME" in
+  Skill)
+    SKILL_NAME=$(echo "$INPUT" | jq -r '.tool_input.skill // "unknown"')
+    SKILL_ARGS=$(echo "$INPUT" | jq -r '.tool_input.args // empty')
+    jq -nc --arg name "$SKILL_NAME" --arg args "$SKILL_ARGS" --arg agent "$AGENT" --arg ts "$TS" \
+      '{"type":"skill","name":$name,"args":$args,"agent":$agent,"ts":$ts}' >> "$LOG_FILE"
+    ;;
+  Bash)
+    # Extract base command (first word) for categorization
+    FULL_CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+    BASE_CMD=$(echo "$FULL_CMD" | awk '{print $1}')
+    echo "{\"type\":\"bash\",\"name\":\"$BASE_CMD\",\"command\":$(echo "$FULL_CMD" | jq -Rs .),\"agent\":\"$AGENT\",\"ts\":\"$TS\"}" >> "$LOG_FILE"
+    ;;
+  Agent)
+    AGENT_TYPE=$(echo "$INPUT" | jq -r '.tool_input.subagent_type // "general-purpose"')
+    AGENT_DESC=$(echo "$INPUT" | jq -r '.tool_input.description // empty')
+    echo "{\"type\":\"agent\",\"name\":\"$AGENT_TYPE\",\"description\":$(echo "$AGENT_DESC" | jq -Rs .),\"agent\":\"$AGENT\",\"ts\":\"$TS\"}" >> "$LOG_FILE"
+    ;;
+  mcp__*)
+    # MCP tools: mcp__<server>__<tool>
+    SERVER=$(echo "$TOOL_NAME" | sed 's/^mcp__//;s/__.*//')
+    MCP_TOOL=$(echo "$TOOL_NAME" | sed 's/^mcp__[^_]*__//')
+    echo "{\"type\":\"mcp\",\"server\":\"$SERVER\",\"tool\":\"$MCP_TOOL\",\"agent\":\"$AGENT\",\"ts\":\"$TS\"}" >> "$LOG_FILE"
+    ;;
+  *)
+    # Built-in tools: Read, Write, Edit, Glob, Grep, WebFetch, WebSearch, etc.
+    echo "{\"type\":\"builtin\",\"name\":\"$TOOL_NAME\",\"agent\":\"$AGENT\",\"ts\":\"$TS\"}" >> "$LOG_FILE"
+    ;;
+esac
+
+exit 0

@@ -1,0 +1,50 @@
+# {{PROJECT_NAME}}
+
+{{PROJECT_DESCRIPTION}}
+
+## Tech Stack
+{{TECH_STACK_SUMMARY}}
+
+## Project Structure
+{{DIRECTORY_STRUCTURE}}
+
+## Development
+
+### Build & Run
+{{BUILD_COMMANDS}}
+
+### Testing
+{{TEST_COMMANDS}}
+
+### Linting
+{{LINT_COMMANDS}}
+
+## Conventions
+{{CODING_CONVENTIONS}}
+
+## Agents
+
+This repo uses a Claude Code agent system managed by CCAutomated:
+
+| Agent | Role |
+|-------|------|
+| Researcher | Codebase analysis and exploration. Read-only. |
+| Implementer | Implements features, fixes bugs. Uses stack-specific tools. |
+| Reviewer | Reviews code quality, security, correctness. Read-only. |
+| Mutagen | Evolution engine. Discovers new tools, prunes unused ones, creates skills. |
+| Mutagen Discovery | Web scout. Searches for new plugins/MCP servers on session start. |
+
+## Mutagen Evolution
+
+The Mutagen agent runs on every session start. It is **advisory-only** — it never applies changes without your approval.
+
+On session start, Mutagen:
+- Reads its memory (`.claude/mutagen-memory/`) for past evaluations and decisions
+- Analyzes usage patterns for pruning candidates, skill opportunities, and efficiency improvements
+- Searches for new relevant plugins and MCP servers (skips already-evaluated ones)
+- For high-frequency tools (10+ uses), searches for faster alternatives
+- Detects bash-to-builtin opportunities (e.g., `grep -r` → Grep tool)
+- Writes all findings to `.claude/mutagen-memory/pending-recommendations.md`
+- Greets you with a summary of recommendations (silent if nothing to report)
+
+Respond with "approve all", "approve 1,3", "reject 2", "details 1", or "skip" to defer to next session.

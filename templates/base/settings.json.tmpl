@@ -1,0 +1,57 @@
+{
+  "model": "opus",
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Read",
+      "Glob",
+      "Grep",
+      "Write",
+      "Edit",
+      "Agent",
+      "Skill",
+      "WebFetch",
+      "WebSearch"
+      {{EXTRA_PERMISSIONS}}
+    ],
+    "deny": [
+      "Bash(git push --force *)",
+      "Bash(rm -rf /)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "mutagen",
+            "prompt": "Run your evolution cycle. You are ADVISORY ONLY — never apply changes without user approval. (1) Read your memory (.claude/mutagen-memory/), pending recommendations, and history. (2) Analyze usage logs for patterns, pruning candidates, and high-frequency tools (10+ uses = efficiency analysis). (3) Spawn Mutagen Discovery in discovery mode — skip tools already in plugin-registry.md. (4) For high-frequency tools, spawn Discovery again in efficiency mode. (5) Evaluate all findings, update plugin-registry.md. (6) Detect skill opportunities from recurring patterns. (7) Write ALL recommendations to pending-recommendations.md. (8) Greet the user with a summary. If zero recommendations, output nothing. The user will approve, reject, or defer each item."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-tool-use.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/stop-session-metrics.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
