@@ -310,14 +310,14 @@ Two test suites validate the full pipeline:
 # Create a test repo (TypeScript/Express/Vitest project at /tmp/)
 bash tests/setup-test-repo.sh
 
-# Deploy a setup to it, then validate (33 checks)
+# Deploy a setup to it, then validate (37 checks)
 bash tests/validate-setup.sh /tmp/ccautomated-test-repo
 
 # Integration test: starts a real Claude session, verifies hooks fire
 bash tests/integration-session-start.sh /tmp/ccautomated-test-repo
 ```
 
-### validate-setup.sh (33 checks)
+### validate-setup.sh (37 checks)
 
 | Category | What's validated |
 |----------|-----------------|
